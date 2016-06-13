@@ -1,0 +1,48 @@
+{
+	"enumTypes": [],
+	"structTypes": [],
+	"traitTypes": [],
+	"classTypes": [
+		{
+        		"superTypes":["DataSet"],
+			"hierarchicalMetaTypeName": "org.apache.atlas.typesystem.types.ClassType",
+        		"typeName": "event",
+        		"attributeDefinitions": [
+        			{
+            				"name": "event_key",
+            				"dataTypeName": "string",
+            				"multiplicity": "optional",
+            				"isComposite": false,
+            				"isUnique": false,
+            				"isIndexable": true,
+            				"reverseAttributeName": null
+          			}
+			]
+		},
+		{
+			"superTypes":["Process"],
+			"hierarchicalMetaTypeName": "org.apache.atlas.typesystem.types.ClassType",
+			"typeName": "nifi_flow",
+			"attributeDefinitions": [
+          			{
+            				"name": "nodes",
+            				"dataTypeName": "string",
+            				"multiplicity": "optional",
+            				"isComposite": false,
+            				"isUnique": false,
+            				"isIndexable": true,
+            				"reverseAttributeName": null
+          			},
+				{
+                                        "name": "flow_id",
+                                        "dataTypeName": "string",
+                                        "multiplicity": "optional",
+                                        "isComposite": false,
+                                        "isUnique": false,
+                                        "isIndexable": true,
+                                        "reverseAttributeName": null
+                                }
+        		]
+      		}
+   ]
+}

@@ -1,0 +1,23 @@
+{
+	"enumTypes": [],
+	"structTypes": [],
+	"traitTypes": [],
+	"classTypes": [
+		{
+			"superTypes":["Process"],
+			"hierarchicalMetaTypeName": "org.apache.atlas.typesystem.types.ClassType",
+			"typeName": "storm_topology_reference",
+			"attributeDefinitions": [
+          			{
+            				"name": "nodes",
+            				"dataTypeName": "string",
+            				"multiplicity": "optional",
+            				"isComposite": false,
+            				"isUnique": false,
+            				"isIndexable": true,
+            				"reverseAttributeName": null
+          			}
+        	]
+      	}
+   ]
+}
