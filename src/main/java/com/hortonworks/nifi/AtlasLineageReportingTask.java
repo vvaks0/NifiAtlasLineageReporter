@@ -50,7 +50,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
             .description("The URL of the Atlas Server")
             .required(true)
             .expressionLanguageSupported(true)
-            .defaultValue("http://localhost:21000/")
+            .defaultValue("http://localhost:21000")
             .addValidator(StandardValidators.URL_VALIDATOR)
             .build();
     static final PropertyDescriptor ACTION_PAGE_SIZE = new PropertyDescriptor.Builder()
@@ -71,7 +71,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private Referenceable incomingEvent = null;
     private int timesTriggered = 0;
     private WebResource service;
-    private String atlasUrl;
+    private String atlasUrl = "http://localhost:21000";
     private String atlasVersion;
     
     @Override
