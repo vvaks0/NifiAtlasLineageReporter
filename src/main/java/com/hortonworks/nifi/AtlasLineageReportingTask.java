@@ -72,7 +72,9 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private int timesTriggered = 0;
     private WebResource service;
     private String atlasUrl = "http://localhost:21000";
-    private String atlasVersion;
+    public static final String DEFAULT_ADMIN_USER = "admin";
+	public static final String DEFAULT_ADMIN_PASS = "admin";
+    private Double atlasVersion;
     
     @Override
     protected List<PropertyDescriptor> getSupportedPropertyDescriptors() {
@@ -85,13 +87,15 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     @Override
     public void onTrigger(ReportingContext reportingContext) {
         // create the Atlas client if we don't have one
-        if (atlasClient == null) {
+    	String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
+		String[] atlasURL = {atlasUrl};
+    	if (atlasClient == null) {
             atlasUrl = reportingContext.getProperty(ATLAS_URL).getValue();
             getLogger().info("Creating new Atlas client for {}", new Object[] {atlasUrl});
-            atlasClient = new AtlasClient(atlasUrl);
+            atlasClient = new AtlasClient(atlasURL, basicAuth);
         }
 
-        atlasVersion = getAtlasVersion(atlasUrl + "/api/atlas/admin/version");
+        atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version"));
         getLogger().info("********************* Atlas Version is: " + atlasVersion);
 		
         final EventAccess eventAccess = reportingContext.getEventAccess();
@@ -236,10 +240,10 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         final String entityJSON = InstanceSerialization.toJson(referenceable, true);
         getLogger().info("Submitting new entity {} = {}", new Object[] {referenceable.getTypeName(), entityJSON});
 
-        final JSONObject guid = atlasClient.createEntity(entityJSON);
-        getLogger().info("created instance for type " + typeName + ", guid: " + guid.getString("GUID"));
+        final List<String> guid = atlasClient.createEntity(entityJSON);
+        getLogger().info("created instance for type " + typeName + ", guid: " + guid);
 
-        return new Referenceable(guid.getString("GUID"), referenceable.getTypeName(), null);
+        return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
     }
 
     private Referenceable createNifiFlow(final ReportingContext context, final Referenceable ingressPoint, final Referenceable egressPoint) {
@@ -323,15 +327,20 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		 
 		String dslQuery = String.format("%s where %s = \"%s\"", typeName, "name", id);
 		getLogger().info("********************* Atlas Version is: " + atlasVersion);
-		Referenceable eventReferenceable = null;
+		//Referenceable eventReferenceable = null;
+		/*
 		if(atlasVersion.equalsIgnoreCase("0.5"))
-			eventReferenceable = getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
+			return getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
 		else if(atlasVersion.equalsIgnoreCase("0.6"))
-			eventReferenceable = getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
+			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
 		else
-			eventReferenceable = null;
+			return null;
+		*/
 		
-		return eventReferenceable;
+		if(atlasVersion >= 0.7)
+			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
+		else
+			return null;
 	}
     // Used this when event uuid is coming from external system
     private Referenceable getEventReference(ProvenanceEventRecord event, String uuid) throws Exception {
@@ -339,15 +348,20 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		
 		String dslQuery = String.format("%s where %s = \"%s\"", typeName, "name", uuid);
 		getLogger().info("********************* Atlas Version is: " + atlasVersion);
-		Referenceable eventReferenceable = null;
+		//Referenceable eventReferenceable = null;
+		/*
 		if(atlasVersion.equalsIgnoreCase("0.5"))
-			eventReferenceable = getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
+			return getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
 		else if(atlasVersion.equalsIgnoreCase("0.6"))
-			eventReferenceable = getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
+			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
 		else
-			eventReferenceable = null;
+			return null;
+		*/
 		
-		return eventReferenceable;
+		if(atlasVersion >= 0.7)
+			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
+		else
+			return null;
 	}
     
     public static Map<String, String> getFieldValues(Object instance, boolean prependClassName) throws IllegalAccessException {
