@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
@@ -71,7 +72,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private Referenceable incomingEvent = null;
     private int timesTriggered = 0;
     private WebResource service;
-    private String atlasUrl = "http://localhost:21000";
+    private String atlasUrl = "http://sandbox.hortonworks.com:21000";
     public static final String DEFAULT_ADMIN_USER = "admin";
 	public static final String DEFAULT_ADMIN_PASS = "admin";
     private Double atlasVersion;
@@ -87,6 +88,10 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     @Override
     public void onTrigger(ReportingContext reportingContext) {
         // create the Atlas client if we don't have one
+    	Properties props = System.getProperties();
+        props.setProperty("atlas.conf", "/usr/hdp/current/atlas-client/conf");
+        getLogger().info("***************** atlas.conf has been set to: " + props.getProperty("atlas.conf"));
+    	
     	String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
 		String[] atlasURL = {atlasUrl};
     	if (atlasClient == null) {
@@ -95,7 +100,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
             atlasClient = new AtlasClient(atlasURL, basicAuth);
         }
 
-        atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version"));
+        atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
         getLogger().info("********************* Atlas Version is: " + atlasVersion);
 		
         final EventAccess eventAccess = reportingContext.getEventAccess();
@@ -524,8 +529,8 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
            throws Exception {
 	   getLogger().info("****************************** Query String: " + dslQuery);
 	   
-       //JSONArray results = atlasClient.searchByDSL(dslQuery);
-       JSONArray results = searchDSL(atlasUrl + "/api/atlas/discovery/search/dsl?query=", dslQuery);
+       JSONArray results = atlasClient.searchByDSL(dslQuery);
+       //JSONArray results = searchDSL(atlasUrl + "/api/atlas/discovery/search/dsl?query=", dslQuery);
 	   getLogger().info("****************************** Query Results Count: " + results.length());
        if (results.length() == 0) {
            return null;
@@ -557,12 +562,12 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         return jsonArray;
     }
 	
-	private String getAtlasVersion(String uri){
-		System.out.println("************************ Getting Atlas Version from: " + uri);
+	private String getAtlasVersion(String urlString, String[] basicAuth){
+		System.out.println("************************ Getting Atlas Version from: " + urlString);
 		JSONObject json = null;
 		String versionValue = null;
         try{
-        	json = readJsonFromUrl(uri);
+        	json = readJSONFromUrlAuth(urlString, basicAuth);
         	System.out.println("************************ Response from Atlas: " + json);
         	versionValue = json.getString("Version");
         } catch (Exception e) {
@@ -570,6 +575,27 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         }
 		return versionValue.substring(0,3);
 	}
+	
+	private JSONObject readJSONFromUrlAuth(String urlString, String[] basicAuth) throws IOException, JSONException {
+		String userPassString = basicAuth[0]+":"+basicAuth[1];
+		JSONObject json = null;
+		try {
+            URL url = new URL (urlString);
+            String encoding = "YWRtaW46YWRtaW4="; //Base64.encodeBase64String(userPassString.getBytes());
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setDoOutput(true);
+            connection.setRequestProperty  ("Authorization", "Basic " + encoding);
+            InputStream content = (InputStream)connection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(content, Charset.forName("UTF-8")));
+  	      	String jsonText = readAll(rd);
+  	      	json = new JSONObject(jsonText);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return json;
+    }
 	
 	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
 	    InputStream is = new URL(url).openStream();
