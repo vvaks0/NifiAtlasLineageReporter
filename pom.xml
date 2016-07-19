@@ -41,9 +41,14 @@
     		<artifactId>atlas-typesystem</artifactId>
     		<version>0.7-incubating</version>
 		</dependency>
-		<dependency>
+	<!--  <dependency>
     		<groupId>org.apache.atlas</groupId>
     		<artifactId>atlas-common</artifactId>
+    		<version>0.7-incubating</version>
+		</dependency> -->
+		<dependency>
+    		<groupId>org.apache.atlas</groupId>
+    		<artifactId>atlas-notification</artifactId>
     		<version>0.7-incubating</version>
 		</dependency>
 		<dependency>

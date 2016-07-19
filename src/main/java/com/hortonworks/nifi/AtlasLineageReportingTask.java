@@ -242,10 +242,11 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         final String typeName = referenceable.getTypeName();
         getLogger().info("creating instance of type " + typeName);
 
-        final String entityJSON = InstanceSerialization.toJson(referenceable, true);
-        getLogger().info("Submitting new entity {} = {}", new Object[] {referenceable.getTypeName(), entityJSON});
-
-        final List<String> guid = atlasClient.createEntity(entityJSON);
+        //final String entityJSON = InstanceSerialization.toJson(referenceable, true);
+        //getLogger().info("Submitting new entity {} = {}", new Object[] {referenceable.getTypeName(), entityJSON});
+        getLogger().info("Submitting new entity: " + referenceable.toString());
+        //final List<String> guid = atlasClient.createEntity(entityJSON);
+        final List<String> guid = atlasClient.createEntity(referenceable);
         getLogger().info("created instance for type " + typeName + ", guid: " + guid);
 
         return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
@@ -261,7 +262,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         final LineageReferenceType[] outputs = {new LineageReferenceType(egressPoint.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
         
         final Referenceable nifiFlow = new Referenceable("nifi_flow");
-        //nifiFlow.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, id);
+        nifiFlow.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, id);
         nifiFlow.set("flow_id", id);
         nifiFlow.set("name", name+"_"+id+"_"+inputs[0].getId()+"_"+outputs[0].getId());
         nifiFlow.set("inputs", inputs);
@@ -277,7 +278,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         
         // TODO populate processor properties and determine real parent group, assuming root group for now
         final Referenceable processor = new Referenceable("event");
-        //processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, flowFileUuid);
+        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, flowFileUuid);
         processor.set("name", flowFileUuid);
         processor.set("event_key", "accountNumber");
         processor.set("description", flowFileUuid);
@@ -287,7 +288,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     //Use this version of method when incoming event is ingested and Flow File UUID has not yet been assigned
     private Referenceable createEvent(final ProvenanceEventRecord event, final String uuid) {
         final Referenceable processor = new Referenceable("event");
-        //processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, uuid);
+        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, uuid);
         processor.set("name", uuid);
         processor.set("event_key", "accountNumber");
         processor.set("description", uuid);
