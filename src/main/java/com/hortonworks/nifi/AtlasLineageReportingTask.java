@@ -89,7 +89,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     public void onTrigger(ReportingContext reportingContext) {
         // create the Atlas client if we don't have one
     	Properties props = System.getProperties();
-        props.setProperty("atlas.conf", "/usr/hdp/current/atlas-client/conf");
+        props.setProperty("atlas.conf", "/usr/hdp/current/atlas-server/conf");
         getLogger().info("***************** atlas.conf has been set to: " + props.getProperty("atlas.conf"));
     	
     	String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
