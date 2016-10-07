@@ -2,8 +2,18 @@ package com.hortonworks.nifi;
 
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.typesystem.Referenceable;
+import org.apache.atlas.typesystem.TypesDef;
 import org.apache.atlas.typesystem.json.InstanceSerialization;
+import org.apache.atlas.typesystem.json.TypesSerialization;
 import org.apache.atlas.typesystem.persistence.Id;
+import org.apache.atlas.typesystem.types.AttributeDefinition;
+import org.apache.atlas.typesystem.types.ClassType;
+import org.apache.atlas.typesystem.types.EnumTypeDefinition;
+import org.apache.atlas.typesystem.types.HierarchicalTypeDefinition;
+import org.apache.atlas.typesystem.types.Multiplicity;
+import org.apache.atlas.typesystem.types.StructTypeDefinition;
+import org.apache.atlas.typesystem.types.TraitType;
+import org.apache.atlas.typesystem.types.utils.TypesUtil;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
@@ -18,6 +28,8 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.sun.jersey.api.client.WebResource;
 
 import java.io.BufferedReader;
@@ -76,6 +88,9 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     public static final String DEFAULT_ADMIN_USER = "admin";
 	public static final String DEFAULT_ADMIN_PASS = "admin";
     private Double atlasVersion;
+    private final static Map<String, HierarchicalTypeDefinition<ClassType>> classTypeDefinitions = new HashMap();
+	private final static Map<String, EnumTypeDefinition> enumTypeDefinitionMap = new HashMap();
+	private final static Map<String, StructTypeDefinition> structTypeDefinitionMap = new HashMap();
     
     @Override
     protected List<PropertyDescriptor> getSupportedPropertyDescriptors() {
@@ -617,5 +632,61 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 	      sb.append((char) cp);
 	    }
 	    return sb.toString();
+	}
+	
+	private static void createNifiFlowType(){
+		  final String typeName = "nifi_flow";
+		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
+				  new AttributeDefinition("nodes", "string", Multiplicity.OPTIONAL, false, null),
+				  new AttributeDefinition("flow_id", "string", Multiplicity.OPTIONAL, false, null),
+		  };
+
+		  addClassTypeDefinition(typeName, ImmutableSet.of("Process"), attributeDefinitions);
+		  System.out.println("Created definition for " + typeName);
+	}
+	
+	private static void createEventType(){
+		  final String typeName = "event";
+		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
+				  new AttributeDefinition("event_key", "string", Multiplicity.OPTIONAL, false, null),
+		  };
+
+		  addClassTypeDefinition(typeName, ImmutableSet.of("Dataset"), attributeDefinitions);
+		  System.out.println("Created definition for " + typeName);
+	}
+	
+	private static void addClassTypeDefinition(String typeName, ImmutableSet<String> superTypes, AttributeDefinition[] attributeDefinitions) {
+		HierarchicalTypeDefinition<ClassType> definition =
+              new HierarchicalTypeDefinition<>(ClassType.class, typeName, null, superTypes, attributeDefinitions);
+		classTypeDefinitions.put(typeName, definition);
+	}
+	
+	public static ImmutableList<EnumTypeDefinition> getEnumTypeDefinitions() {
+		return ImmutableList.copyOf(enumTypeDefinitionMap.values());
+	}
+
+	public static ImmutableList<StructTypeDefinition> getStructTypeDefinitions() {
+		return ImmutableList.copyOf(structTypeDefinitionMap.values());
+	}
+	
+	public static ImmutableList<HierarchicalTypeDefinition<TraitType>> getTraitTypeDefinitions() {
+		return ImmutableList.of();
+	}
+	
+	private static String generateAvroSchemaDataModel(){
+		TypesDef typesDef;
+		String nifiEventLineageDataModelJSON;
+		createEventType();
+		createNifiFlowType();
+		
+		typesDef = TypesUtil.getTypesDef(
+				getEnumTypeDefinitions(), 	//Enums 
+				getStructTypeDefinitions(), //Struct 
+				getTraitTypeDefinitions(), 	//Traits 
+				ImmutableList.copyOf(classTypeDefinitions.values()));
+		
+		nifiEventLineageDataModelJSON = TypesSerialization.toJson(typesDef);
+		System.out.println("Submitting Types Definition: " + nifiEventLineageDataModelJSON);
+		return nifiEventLineageDataModelJSON;
 	}
 }
