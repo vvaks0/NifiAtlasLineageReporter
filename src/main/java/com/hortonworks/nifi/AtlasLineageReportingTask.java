@@ -301,7 +301,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         nifiFlow.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, id);
         nifiFlow.set("flow_id", id);
         //nifiFlow.set("name", name+"_"+id+"_"+inputs[0].getId()+"_"+outputs[0].getId());
-        nifiFlow.set("name", name+"_"+id+"_"+ingressPoint.getId()+"_"+egressPoint.getId());
+        nifiFlow.set("name", name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("inputs", sourceList);
         nifiFlow.set("outputs", targetList);
         nifiFlow.set("description", Arrays.toString(nifiLineage.toArray()));
