@@ -252,7 +252,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         getLogger().info("Processing event with id {}", new Object[] {event.getEventId()});
         //ReferenceableUtil.register(atlasClient, createProcessor(action));
         String eventType = event.getEventType().name();
-        getLogger().info("Processing event iof type {}", new Object[] {eventType});
+        getLogger().info("Processing event of type {}", new Object[] {eventType});
         if(eventType.equalsIgnoreCase("RECEIVE")){
         	nifiFlowIngressMap.put(event.getFlowFileUuid(), register(atlasClient, createIngressProcessor(event)));
         	nifiFlowFiles.add(event.getFlowFileUuid());
@@ -292,10 +292,10 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         final LineageReferenceType[] outputs = {new LineageReferenceType(egressPoint.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
         */
         
-        List<Referenceable> sourceList = new ArrayList<Referenceable>();
-        List<Referenceable> targetList = new ArrayList<>();
-        sourceList.add(ingressPoint);
-        targetList.add(egressPoint);
+        List<Id> sourceList = new ArrayList<Id>();
+        List<Id> targetList = new ArrayList<Id>();
+        sourceList.add(ingressPoint.getId());
+        targetList.add(egressPoint.getId());
         
         final Referenceable nifiFlow = new Referenceable("nifi_flow");
         nifiFlow.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, id);
