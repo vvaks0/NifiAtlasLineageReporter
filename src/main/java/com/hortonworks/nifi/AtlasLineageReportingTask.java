@@ -80,6 +80,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private Map<String, Referenceable> nifiFlowIngressMap = new HashMap<String,Referenceable>();
     private Map<String, Referenceable> nifiFlowEgressMap = new HashMap<String,Referenceable>();
     private List<String> nifiLineage = new ArrayList<String>();
+    private Map<String, String> nifiLineageMap = new HashMap<String, String>();
     private List<String> nifiFlowFiles = new ArrayList<String>();
     private Referenceable outgoingEvent = null;
     private Referenceable incomingEvent = null;
@@ -227,6 +228,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 			}
         	nifiFlowFiles.add(event.getFlowFileUuid());
         	nifiLineage.add(event.getComponentType() + ":" + eventType);
+        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + event.getComponentType() + ":" + eventType);
         }else if(eventType.equalsIgnoreCase("SEND")){
         	try {
 				outgoingEvent = getEventReference(event);
@@ -242,9 +244,11 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 				nifiFlowEgressMap.put(event.getFlowFileUuid(), register(atlasClient, createEvent(event, generatedUuid)));
 			}        	
         	nifiLineage.add(event.getComponentType() + ":" + eventType);
+        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + event.getComponentType() + ":" + eventType);
         }else{
         	getLogger().info("Event type is: " + eventType + ", adding to actions list....");
         	nifiLineage.add(event.getComponentType() + ":" + eventType);
+        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + event.getComponentType() + ":" + eventType);
         }
     }
     /*
@@ -304,7 +308,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         nifiFlow.set("name", name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("inputs", sourceList);
         nifiFlow.set("outputs", targetList);
-        nifiFlow.set("description", String.join(",", nifiLineage));
+        nifiFlow.set("description", nifiLineageMap.get(egressPoint.getValuesMap().get("name")));
         
         return nifiFlow;
     }
