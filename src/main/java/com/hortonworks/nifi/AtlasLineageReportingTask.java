@@ -1,6 +1,7 @@
 package com.hortonworks.nifi;
 
 import org.apache.atlas.AtlasClient;
+import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.TypesDef;
 import org.apache.atlas.typesystem.json.InstanceSerialization;
@@ -118,7 +119,11 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
         getLogger().info("********************* Atlas Version is: " + atlasVersion);
 		
-        generateAvroSchemaDataModel();
+        try {
+			System.out.println("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
+		} catch (AtlasServiceException e1) {
+			e1.printStackTrace();
+		}
         
         final EventAccess eventAccess = reportingContext.getEventAccess();
         final int pageSize = reportingContext.getProperty(ACTION_PAGE_SIZE).asInteger();
@@ -636,7 +641,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 	    return sb.toString();
 	}
 	
-	private static void createNifiFlowType(){
+	private void createNifiFlowType(){
 		  final String typeName = "nifi_flow";
 		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
 				  new AttributeDefinition("nodes", "string", Multiplicity.OPTIONAL, false, null),
@@ -647,7 +652,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		  System.out.println("Created definition for " + typeName);
 	}
 	
-	private static void createEventType(){
+	private void createEventType(){
 		  final String typeName = "event";
 		  final AttributeDefinition[] attributeDefinitions = new AttributeDefinition[] {
 				  new AttributeDefinition("event_key", "string", Multiplicity.OPTIONAL, false, null),
@@ -657,29 +662,40 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		  System.out.println("Created definition for " + typeName);
 	}
 	
-	private static void addClassTypeDefinition(String typeName, ImmutableSet<String> superTypes, AttributeDefinition[] attributeDefinitions) {
+	private void addClassTypeDefinition(String typeName, ImmutableSet<String> superTypes, AttributeDefinition[] attributeDefinitions) {
 		HierarchicalTypeDefinition<ClassType> definition =
               new HierarchicalTypeDefinition<>(ClassType.class, typeName, null, superTypes, attributeDefinitions);
 		classTypeDefinitions.put(typeName, definition);
 	}
 	
-	public static ImmutableList<EnumTypeDefinition> getEnumTypeDefinitions() {
+	public ImmutableList<EnumTypeDefinition> getEnumTypeDefinitions() {
 		return ImmutableList.copyOf(enumTypeDefinitionMap.values());
 	}
 
-	public static ImmutableList<StructTypeDefinition> getStructTypeDefinitions() {
+	public ImmutableList<StructTypeDefinition> getStructTypeDefinitions() {
 		return ImmutableList.copyOf(structTypeDefinitionMap.values());
 	}
 	
-	public static ImmutableList<HierarchicalTypeDefinition<TraitType>> getTraitTypeDefinitions() {
+	public ImmutableList<HierarchicalTypeDefinition<TraitType>> getTraitTypeDefinitions() {
 		return ImmutableList.of();
 	}
 	
-	private static String generateAvroSchemaDataModel(){
+	private String generateNifiEventLineageDataModel(){
 		TypesDef typesDef;
 		String nifiEventLineageDataModelJSON;
-		createEventType();
-		createNifiFlowType();
+		
+		//try {
+			//if(atlasClient.getType("event").isEmpty()){
+				createEventType();
+				//System.out.println("******************* Atlas Type: event already exists");
+			//}
+			//if(atlasClient.getType("nifi_flow").isEmpty()){
+				createNifiFlowType();
+				//System.out.println("******************* Atlas Type: nifi_flow already exists");
+			//}
+		//} catch (AtlasServiceException e) {
+			//e.printStackTrace();
+		//}
 		
 		typesDef = TypesUtil.getTypesDef(
 				getEnumTypeDefinitions(), 	//Enums 
