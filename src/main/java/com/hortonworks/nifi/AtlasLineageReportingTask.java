@@ -124,7 +124,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         	try {
         		if(atlasClient.getType("event").isEmpty() || atlasClient.getType("nifi_flow").isEmpty()){
         			getLogger().info("********************* Data model is not present, creating...");
-        			System.out.println("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
+        			getLogger().info("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
         		}else{
         			getLogger().info("********************* Data model is already present");
         		}	
@@ -595,12 +595,12 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     }
 	
 	private String getAtlasVersion(String urlString, String[] basicAuth){
-		System.out.println("************************ Getting Atlas Version from: " + urlString);
+		getLogger().info("************************ Getting Atlas Version from: " + urlString);
 		JSONObject json = null;
 		String versionValue = null;
         try{
         	json = readJSONFromUrlAuth(urlString, basicAuth);
-        	System.out.println("************************ Response from Atlas: " + json);
+        	getLogger().info("************************ Response from Atlas: " + json);
         	versionValue = json.getString("Version");
         } catch (Exception e) {
             e.printStackTrace();
@@ -658,7 +658,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		  };
 
 		  addClassTypeDefinition(typeName, ImmutableSet.of("Process"), attributeDefinitions);
-		  System.out.println("Created definition for " + typeName);
+		  getLogger().info("Created definition for " + typeName);
 	}
 	
 	private void createEventType(){
@@ -668,7 +668,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		  };
 
 		  addClassTypeDefinition(typeName, ImmutableSet.of("DataSet"), attributeDefinitions);
-		  System.out.println("Created definition for " + typeName);
+		  getLogger().info("Created definition for " + typeName);
 	}
 	
 	private void addClassTypeDefinition(String typeName, ImmutableSet<String> superTypes, AttributeDefinition[] attributeDefinitions) {
@@ -696,11 +696,11 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		//try {
 			//if(atlasClient.getType("event").isEmpty()){
 				createEventType();
-				//System.out.println("******************* Atlas Type: event already exists");
+				//getLogger().info("******************* Atlas Type: event already exists");
 			//}
 			//if(atlasClient.getType("nifi_flow").isEmpty()){
 				createNifiFlowType();
-				//System.out.println("******************* Atlas Type: nifi_flow already exists");
+				//getLogger().info("******************* Atlas Type: nifi_flow already exists");
 			//}
 		//} catch (AtlasServiceException e) {
 			//e.printStackTrace();
@@ -713,7 +713,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 				ImmutableList.copyOf(classTypeDefinitions.values()));
 		
 		nifiEventLineageDataModelJSON = TypesSerialization.toJson(typesDef);
-		System.out.println("Submitting Types Definition: " + nifiEventLineageDataModelJSON);
+		getLogger().info("Submitting Types Definition: " + nifiEventLineageDataModelJSON);
 		return nifiEventLineageDataModelJSON;
 	}
 }
