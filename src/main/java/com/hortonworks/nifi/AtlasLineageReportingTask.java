@@ -291,15 +291,19 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         final LineageReferenceType[] inputs = {new LineageReferenceType(ingressPoint.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
         final LineageReferenceType[] outputs = {new LineageReferenceType(egressPoint.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
         */
-        Id[] inputs = {ingressPoint.getId()};
-        Id[] outputs = {egressPoint.getId()};
+        
+        List<Referenceable> sourceList = new ArrayList<Referenceable>();
+        List<Referenceable> targetList = new ArrayList<>();
+        sourceList.add(ingressPoint);
+        targetList.add(egressPoint);
+        
         final Referenceable nifiFlow = new Referenceable("nifi_flow");
         nifiFlow.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, id);
         nifiFlow.set("flow_id", id);
         //nifiFlow.set("name", name+"_"+id+"_"+inputs[0].getId()+"_"+outputs[0].getId());
         nifiFlow.set("name", name+"_"+id+"_"+ingressPoint.getId()+"_"+egressPoint.getId());
-        nifiFlow.set("inputs", inputs);
-        nifiFlow.set("outputs", outputs);
+        nifiFlow.set("inputs", sourceList);
+        nifiFlow.set("outputs", targetList);
         nifiFlow.set("description", Arrays.toString(nifiLineage.toArray()));
         
         return nifiFlow;
