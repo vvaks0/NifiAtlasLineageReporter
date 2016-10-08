@@ -281,8 +281,11 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         //final List<String> guid = atlasClient.createEntity(entityJSON);
         final List<String> guid = atlasClient.createEntity(referenceable);
         getLogger().info("created instance for type " + typeName + ", guid: " + guid);
-
-        return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
+        
+        if(guid.size() == 0)
+        	return null;
+        else	
+        	return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
     }
 
     private Referenceable createNifiFlow(final ReportingContext context, final Referenceable ingressPoint, final Referenceable egressPoint) {
