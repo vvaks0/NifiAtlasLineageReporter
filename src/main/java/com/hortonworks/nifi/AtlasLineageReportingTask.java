@@ -119,12 +119,19 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
         getLogger().info("********************* Atlas Version is: " + atlasVersion);
 		
-        try {
-			System.out.println("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
-		} catch (AtlasServiceException e1) {
-			e1.printStackTrace();
-		}
-        
+        if(timesTriggered == 0){
+        	getLogger().info("********************* Checking if data model has been created...");
+        	try {
+        		if(atlasClient.getType("event").isEmpty() || atlasClient.getType("nifi_flow").isEmpty()){
+        			getLogger().info("********************* Data model is not present, creating...");
+        			System.out.println("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
+        		}else{
+        			getLogger().info("********************* Data model is already present");
+        		}	
+        	} catch (AtlasServiceException e1) {
+        		e1.printStackTrace();
+        	}
+        }
         final EventAccess eventAccess = reportingContext.getEventAccess();
         final int pageSize = reportingContext.getProperty(ACTION_PAGE_SIZE).asInteger();
         
@@ -277,18 +284,20 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private Referenceable createNifiFlow(final ReportingContext context, final Referenceable ingressPoint, final Referenceable egressPoint) {
         final String id = context.getEventAccess().getControllerStatus().getId();
         final String name = context.getEventAccess().getControllerStatus().getName();
+        /*
         final String jsonClass = "org.apache.atlas.typesystem.json.InstanceSerialization$_Id";
         final Integer version = 0;
         final String typeName = "DataSet";
         final LineageReferenceType[] inputs = {new LineageReferenceType(ingressPoint.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
         final LineageReferenceType[] outputs = {new LineageReferenceType(egressPoint.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
-        
+        */
         final Referenceable nifiFlow = new Referenceable("nifi_flow");
         nifiFlow.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, id);
         nifiFlow.set("flow_id", id);
-        nifiFlow.set("name", name+"_"+id+"_"+inputs[0].getId()+"_"+outputs[0].getId());
-        nifiFlow.set("inputs", inputs);
-        nifiFlow.set("outputs", outputs);
+        //nifiFlow.set("name", name+"_"+id+"_"+inputs[0].getId()+"_"+outputs[0].getId());
+        nifiFlow.set("name", name+"_"+id+"_"+ingressPoint.getId()+"_"+egressPoint.getId());
+        nifiFlow.set("inputs", ingressPoint.getId());
+        nifiFlow.set("outputs", egressPoint.getId());
         nifiFlow.set("description", Arrays.toString(nifiLineage.toArray()));
         
         return nifiFlow;
@@ -316,7 +325,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         processor.set("description", uuid);
         return processor;
     }
-    
+/*    
     private Referenceable createIngressProcessor(final ProvenanceEventRecord event) {
         final String id = event.getComponentId();
         final String name = event.getComponentType();
@@ -348,7 +357,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         processor.set("description", name);
         return processor;
     }
-    
+    */
     private Referenceable getEventReference(ProvenanceEventRecord event) throws Exception {
 		final String typeName = "event";
 		final String id = event.getFlowFileUuid();
