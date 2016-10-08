@@ -118,6 +118,8 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
         getLogger().info("********************* Atlas Version is: " + atlasVersion);
 		
+        generateAvroSchemaDataModel();
+        
         final EventAccess eventAccess = reportingContext.getEventAccess();
         final int pageSize = reportingContext.getProperty(ACTION_PAGE_SIZE).asInteger();
         
