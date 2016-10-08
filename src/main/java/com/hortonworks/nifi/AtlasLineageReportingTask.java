@@ -658,7 +658,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 				  new AttributeDefinition("event_key", "string", Multiplicity.OPTIONAL, false, null),
 		  };
 
-		  addClassTypeDefinition(typeName, ImmutableSet.of("Dataset"), attributeDefinitions);
+		  addClassTypeDefinition(typeName, ImmutableSet.of("DataSet"), attributeDefinitions);
 		  System.out.println("Created definition for " + typeName);
 	}
 	
