@@ -191,7 +191,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-        		getLogger().info("Created new flow: " 
+        		getLogger().info("********************** Created new flow: " 
         				+ nifiFlowRef.toString()
         				+ " for flow file: " + currentEvent);
         		
