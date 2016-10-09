@@ -253,6 +253,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         	//nifiLineage.add(event.getComponentType() + ":" + eventType);
         	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + "-->" + event.getComponentType() + ":" + eventType);
         }
+        getLogger().info(nifiLineageMap.toString());
     }
     /*
     private void processEvent(ProvenanceEventRecord event) throws Exception {
