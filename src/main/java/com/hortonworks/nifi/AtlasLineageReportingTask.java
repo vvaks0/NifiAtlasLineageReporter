@@ -4,7 +4,6 @@ import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.TypesDef;
-import org.apache.atlas.typesystem.json.InstanceSerialization;
 import org.apache.atlas.typesystem.json.TypesSerialization;
 import org.apache.atlas.typesystem.persistence.Id;
 import org.apache.atlas.typesystem.types.AttributeDefinition;
@@ -31,13 +30,12 @@ import org.codehaus.jettison.json.JSONObject;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.sun.jersey.api.client.WebResource;
+//import com.sun.jersey.api.client.WebResource;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
@@ -53,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.UUID;
 
 @Tags({"reporting", "atlas", "lineage", "governance"})
 @CapabilityDescription("Publishes flow changes and metadata to Apache Atlas")
@@ -85,7 +82,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private Referenceable outgoingEvent = null;
     private Referenceable incomingEvent = null;
     private int timesTriggered = 0;
-    private WebResource service;
+    //private WebResource service;
     private String atlasUrl = "http://sandbox.hortonworks.com:21000";
     public static final String DEFAULT_ADMIN_USER = "admin";
 	public static final String DEFAULT_ADMIN_PASS = "admin";
@@ -213,7 +210,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         //ReferenceableUtil.register(atlasClient, createProcessor(action));
         String eventType = event.getEventType().name();
         getLogger().info("Processing event of type {}", new Object[] {eventType});
-        String generatedUuid = UUID.randomUUID().toString();
+        //String generatedUuid = UUID.randomUUID().toString();
         if(eventType.equalsIgnoreCase("RECEIVE")){
         	String qualifiedName = "RECEIVE_"+event.getFlowFileUuid();
         	try {
@@ -277,7 +274,6 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         }
 
         final String typeName = referenceable.getTypeName();
-        Referenceable registeredEntity;
         getLogger().info("creating instance of type " + typeName);
 
         //final String entityJSON = InstanceSerialization.toJson(referenceable, true);
@@ -311,7 +307,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         nifiFlow.set("name", name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("inputs", sourceList);
         nifiFlow.set("outputs", targetList);
-        nifiFlow.set("description", nifiLineageMap.get(egressPoint.getValuesMap().get("description")));
+        nifiFlow.set("nodes", nifiLineageMap.get(egressPoint.getValuesMap().get("description")));
         //nifiFlow.set("description", "");
         
         return nifiFlow;
