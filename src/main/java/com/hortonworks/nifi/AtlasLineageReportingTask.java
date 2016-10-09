@@ -70,6 +70,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
             .required(false)
             .expressionLanguageSupported(true)
             .defaultValue("accountNumber")
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
     static final PropertyDescriptor ACTION_PAGE_SIZE = new PropertyDescriptor.Builder()
             .name("Action Page Size")
