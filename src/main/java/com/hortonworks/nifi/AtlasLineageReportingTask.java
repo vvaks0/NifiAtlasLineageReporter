@@ -64,7 +64,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
             .description("The URL of the Atlas Server")
             .required(true)
             .expressionLanguageSupported(true)
-            .defaultValue("http://localhost:21000")
+            .defaultValue("http://sandbox.hortonworks.com:21000")
             .addValidator(StandardValidators.URL_VALIDATOR)
             .build();
     static final PropertyDescriptor ACTION_PAGE_SIZE = new PropertyDescriptor.Builder()
@@ -79,7 +79,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private AtlasClient atlasClient;
     private Map<String, Referenceable> nifiFlowIngressMap = new HashMap<String,Referenceable>();
     private Map<String, Referenceable> nifiFlowEgressMap = new HashMap<String,Referenceable>();
-    private List<String> nifiLineage = new ArrayList<String>();
+    //private List<String> nifiLineage = new ArrayList<String>();
     private Map<String, String> nifiLineageMap = new HashMap<String, String>();
     private List<String> nifiFlowFiles = new ArrayList<String>();
     private Referenceable outgoingEvent = null;
@@ -203,7 +203,8 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         nifiFlowFiles.clear();
         nifiFlowIngressMap.clear();
         nifiFlowEgressMap.clear();
-        nifiLineage.clear();
+        //nifiLineage.clear();
+        nifiLineageMap.clear();
         timesTriggered++;
     }
     
@@ -214,8 +215,9 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         getLogger().info("Processing event of type {}", new Object[] {eventType});
         String generatedUuid = UUID.randomUUID().toString();
         if(eventType.equalsIgnoreCase("RECEIVE")){
+        	String qualifiedName = "RECEIVE_"+event.getFlowFileUuid();
         	try {
-				incomingEvent = getEventReference(event, generatedUuid);
+				incomingEvent = getEventReference(event, qualifiedName);
 			} catch (Exception e) {
 				getLogger().debug("******************** CAUGHT EXCEPTION" + e.getMessage() + " : " + Arrays.toString(e.getStackTrace()));
 			}
@@ -223,15 +225,16 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 				getLogger().info("********************* Source Referenceable Event: " + incomingEvent.toString());
 				nifiFlowIngressMap.put(event.getFlowFileUuid(), incomingEvent);
 			}else{
-				getLogger().info("********************* Could not find Referenceable Event, creating...." + generatedUuid );
-				nifiFlowIngressMap.put(event.getFlowFileUuid(), register(atlasClient, createEvent(event, generatedUuid)));
+				getLogger().info("********************* Could not find Referenceable Event, creating...." + qualifiedName );
+				nifiFlowIngressMap.put(event.getFlowFileUuid(), register(atlasClient, createEvent(event, qualifiedName)));
 			}
         	nifiFlowFiles.add(event.getFlowFileUuid());
-        	nifiLineage.add(event.getComponentType() + ":" + eventType);
-        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + event.getComponentType() + ":" + eventType);
+        	//nifiLineage.add(event.getComponentType() + ":" + eventType);
+        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + "-->" + event.getComponentType() + ":" + eventType);
         }else if(eventType.equalsIgnoreCase("SEND")){
+        	String qualifiedName = "SEND_"+event.getFlowFileUuid();
         	try {
-				outgoingEvent = getEventReference(event);
+				outgoingEvent = getEventReference(event, qualifiedName);
 			} catch (Exception e) {
 				e.printStackTrace();
 				getLogger().debug("******************** CAUGHT EXCEPTION" + e.getMessage() + " : " + Arrays.toString(e.getStackTrace()));
@@ -240,15 +243,15 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 				getLogger().info("********************* Source Referenceable Event: " + outgoingEvent.toString());
 				nifiFlowEgressMap.put(event.getFlowFileUuid(), outgoingEvent);
 			}else{
-				getLogger().info("********************* Could not find Referenceable Event, creating...." + event.getFlowFileUuid());
-				nifiFlowEgressMap.put(event.getFlowFileUuid(), register(atlasClient, createEvent(event, generatedUuid)));
+				getLogger().info("********************* Could not find Referenceable Event, creating...." + qualifiedName);
+				nifiFlowEgressMap.put(event.getFlowFileUuid(), register(atlasClient, createEvent(event, qualifiedName)));
 			}        	
-        	nifiLineage.add(event.getComponentType() + ":" + eventType);
-        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + event.getComponentType() + ":" + eventType);
+        	//nifiLineage.add(event.getComponentType() + ":" + eventType);
+        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + "-->" + event.getComponentType() + ":" + eventType);
         }else{
         	getLogger().info("Event type is: " + eventType + ", adding to actions list....");
-        	nifiLineage.add(event.getComponentType() + ":" + eventType);
-        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + event.getComponentType() + ":" + eventType);
+        	//nifiLineage.add(event.getComponentType() + ":" + eventType);
+        	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + "-->" + event.getComponentType() + ":" + eventType);
         }
     }
     /*
@@ -291,13 +294,6 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private Referenceable createNifiFlow(final ReportingContext context, final Referenceable ingressPoint, final Referenceable egressPoint) {
         final String id = context.getEventAccess().getControllerStatus().getId();
         final String name = context.getEventAccess().getControllerStatus().getName();
-        /*
-        final String jsonClass = "org.apache.atlas.typesystem.json.InstanceSerialization$_Id";
-        final Integer version = 0;
-        final String typeName = "DataSet";
-        final LineageReferenceType[] inputs = {new LineageReferenceType(ingressPoint.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
-        final LineageReferenceType[] outputs = {new LineageReferenceType(egressPoint.getId()._getId().replace("[", "").replace("]", "").replace("\"", "").replace("\\", ""), jsonClass, version, typeName)};
-        */
         
         List<Id> sourceList = new ArrayList<Id>();
         List<Id> targetList = new ArrayList<Id>();
@@ -311,103 +307,28 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         nifiFlow.set("name", name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("inputs", sourceList);
         nifiFlow.set("outputs", targetList);
-        //nifiFlow.set("description", nifiLineageMap.get(egressPoint.getValuesMap().get("name")));
-        nifiFlow.set("description", "");
+        nifiFlow.set("description", nifiLineageMap.get(egressPoint.getValuesMap().get("name")));
+        //nifiFlow.set("description", "");
         
         return nifiFlow;
     }
-
-    //Use this version of method when Flow File UUID has been assigned
-    private Referenceable createEvent(final ProvenanceEventRecord event) {
-        final String flowFileUuid = event.getFlowFileUuid();
-        
-        // TODO populate processor properties and determine real parent group, assuming root group for now
-        final Referenceable processor = new Referenceable("event");
-        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, flowFileUuid);
-        processor.set("name", flowFileUuid);
-        processor.set("event_key", "accountNumber");
-        processor.set("description", flowFileUuid);
-        return processor;
-    }
     
     //Use this version of method when incoming event is ingested and Flow File UUID has not yet been assigned
-    private Referenceable createEvent(final ProvenanceEventRecord event, final String uuid) {
+    private Referenceable createEvent(final ProvenanceEventRecord event, final String qualifiedName) {
         final Referenceable processor = new Referenceable("event");
-        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, uuid);
-        processor.set("name", uuid);
+        processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, qualifiedName);
+        processor.set("name", event.getFlowFileUuid());
         processor.set("event_key", "accountNumber");
-        processor.set("description", uuid);
+        processor.set("description", qualifiedName);
         return processor;
     }
-/*    
-    private Referenceable createIngressProcessor(final ProvenanceEventRecord event) {
-        final String id = event.getComponentId();
-        final String name = event.getComponentType();
-        final String ingressURL = event.getTransitUri();
-        final String flowFileUuid = event.getFlowFileUuid();
-        
-        // TODO populate processor properties and determine real parent group, assuming root group for now
-        final Referenceable processor = new Referenceable("nifi_input_processor");
-        processor.set("component_id", id);
-        processor.set("name", name + "_" + flowFileUuid);
-        processor.set("flow_file_uuid", flowFileUuid);
-        processor.set("ingress_point", ingressURL);
-        processor.set("description", name);
-        return processor;
-    }
-    
-    private Referenceable createEgressProcessor(final ProvenanceEventRecord event) {
-        final String id = event.getComponentId();
-        final String name = event.getComponentType();
-        final String egressURL = event.getTransitUri();
-        final String flowFileUuid = event.getFlowFileUuid();
 
-        // TODO populate processor properties and determine real parent group, assuming root group for now
-        final Referenceable processor = new Referenceable("nifi_output_processor");
-        processor.set("component_id", id);
-        processor.set("name", name + "_" + flowFileUuid);
-        processor.set("flow_file_uuid", flowFileUuid);
-        processor.set("egress_point", egressURL);
-        processor.set("description", name);
-        return processor;
-    }
-    */
-    private Referenceable getEventReference(ProvenanceEventRecord event) throws Exception {
-		final String typeName = "event";
-		final String id = event.getFlowFileUuid();
-		 
-		String dslQuery = String.format("%s where %s = \"%s\"", typeName, "name", id);
-		getLogger().info("********************* Atlas Version is: " + atlasVersion);
-		//Referenceable eventReferenceable = null;
-		/*
-		if(atlasVersion.equalsIgnoreCase("0.5"))
-			return getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
-		else if(atlasVersion.equalsIgnoreCase("0.6"))
-			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
-		else
-			return null;
-		*/
-		
-		if(atlasVersion >= 0.7)
-			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
-		else
-			return null;
-	}
     // Used this when event uuid is coming from external system
-    private Referenceable getEventReference(ProvenanceEventRecord event, String uuid) throws Exception {
+    private Referenceable getEventReference(ProvenanceEventRecord event, String qualifiedName) throws Exception {
 		final String typeName = "event";
 		
-		String dslQuery = String.format("%s where %s = \"%s\"", typeName, "name", uuid);
+		String dslQuery = String.format("%s where %s = \"%s\"", typeName, "qualifiedName", qualifiedName);
 		getLogger().info("********************* Atlas Version is: " + atlasVersion);
-		//Referenceable eventReferenceable = null;
-		/*
-		if(atlasVersion.equalsIgnoreCase("0.5"))
-			return getEntityReferenceFromDSL5(atlasClient, typeName, dslQuery);
-		else if(atlasVersion.equalsIgnoreCase("0.6"))
-			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
-		else
-			return null;
-		*/
 		
 		if(atlasVersion >= 0.7)
 			return getEntityReferenceFromDSL6(atlasClient, typeName, dslQuery);
@@ -548,28 +469,6 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		else
 			return instance.toString();
 	}
-	
-	private Referenceable getEntityReferenceFromDSL5(final AtlasClient atlasClient, final String typeName, final String dslQuery)
-            throws Exception {
-		getLogger().info("****************************** Query String: " + dslQuery);
-		
-        final JSONArray results = atlasClient.searchByDSL(dslQuery);
-        getLogger().info("****************************** Query Results Count: " + results.length());
-        if (results.length() == 0) {
-            return null;
-        } else {
-            String guid;
-            JSONObject row = results.getJSONObject(0);
-            if (row.has("$id$")) {
-                guid = row.getJSONObject("$id$").getString("id");
-            } else {
-                guid = row.getJSONObject("_col_0").getString("id");
-            }
-            getLogger().info("****************************** Resulting JSON Object: " + row.toString());
-            getLogger().info("****************************** Inputs to Referenceable: " + guid + " : " + typeName);
-            return new Referenceable(guid, typeName, null);
-        }
-    }
 	
 	private Referenceable getEntityReferenceFromDSL6(final AtlasClient atlasClient, final String typeName, final String dslQuery)
            throws Exception {
