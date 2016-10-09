@@ -272,11 +272,12 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     }*/
     
 	public Referenceable register(final AtlasClient atlasClient, final Referenceable referenceable) throws Exception {
-        if (referenceable == null) {
+		if (referenceable == null) {
             return null;
         }
 
         final String typeName = referenceable.getTypeName();
+        Referenceable registeredEntity;
         getLogger().info("creating instance of type " + typeName);
 
         //final String entityJSON = InstanceSerialization.toJson(referenceable, true);
@@ -286,11 +287,12 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         final List<String> guid = atlasClient.createEntity(referenceable);
         getLogger().info("created instance for type " + typeName + ", guid: " + guid);
         
-        if(guid.size() == 0)
+        if(guid.size() == 0){
         	return null;
-        else
+        }else{
+        	referenceable.replaceWithNewId(new Id(guid.get(guid.size() - 1))); 
         	return referenceable;
-        	//return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
+        }		
     }
 
     private Referenceable createNifiFlow(final ReportingContext context, final Referenceable ingressPoint, final Referenceable egressPoint) {
@@ -309,7 +311,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         nifiFlow.set("name", name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("inputs", sourceList);
         nifiFlow.set("outputs", targetList);
-        nifiFlow.set("description", nifiLineageMap.get(egressPoint.getValuesMap().get("name")));
+        nifiFlow.set("description", nifiLineageMap.get(egressPoint.getValuesMap().get("description")));
         //nifiFlow.set("description", "");
         
         return nifiFlow;
@@ -319,9 +321,9 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private Referenceable createEvent(final ProvenanceEventRecord event, final String qualifiedName) {
         final Referenceable processor = new Referenceable("event");
         processor.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, qualifiedName);
-        processor.set("name", event.getFlowFileUuid());
+        processor.set("name", qualifiedName);
         processor.set("event_key", "accountNumber");
-        processor.set("description", qualifiedName);
+        processor.set("description", event.getFlowFileUuid());
         return processor;
     }
 
