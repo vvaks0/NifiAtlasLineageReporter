@@ -286,8 +286,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         if(guid.size() == 0){
         	return null;
         }else{
-        	referenceable.replaceWithNewId(new Id(guid.get(guid.size() - 1))); 
-        	return referenceable;
+        	return new Referenceable(guid.get(guid.size() - 1), referenceable.getTypeName(), referenceable.getValuesMap());
         }		
     }
 
