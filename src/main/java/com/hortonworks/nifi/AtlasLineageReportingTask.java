@@ -288,8 +288,9 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         
         if(guid.size() == 0)
         	return null;
-        else	
-        	return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
+        else
+        	return referenceable;
+        	//return new Referenceable(guid.get(guid.size() - 1) , referenceable.getTypeName(), null);
     }
 
     private Referenceable createNifiFlow(final ReportingContext context, final Referenceable ingressPoint, final Referenceable egressPoint) {
