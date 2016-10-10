@@ -138,18 +138,13 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     	getLogger().info("********************* Number of Reports Sent: " + timesTriggered);
         if(timesTriggered == 0){
         	getLogger().info("********************* Checking if data model has been created...");
-        	try {
-        		atlasClient.getType("event");
-        		atlasClient.getType("nifi_flow");
-        		getLogger().info("********************* Data model is already present");	
-        	} catch (AtlasServiceException e) {
-        		getLogger().info("********************* Data model is not present, creating...");
-    			try {
-					getLogger().info("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
-				} catch (AtlasServiceException e1) {
-					e1.printStackTrace();
-				}
-        	}
+        	
+			try {
+				getLogger().info("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
+			} catch (AtlasServiceException e) {
+				e.printStackTrace();
+			}
+				
         }
         
         //When the Task triggers for the first time, find the last eventId and start from there 
@@ -604,8 +599,19 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 		TypesDef typesDef;
 		String nifiEventLineageDataModelJSON;
 		
-		createEventType();
-		createNifiFlowType();
+    	try {
+			atlasClient.getType("event");
+			getLogger().info("********************* Nifi Atlas Type: event is already present");
+		} catch (AtlasServiceException e) {
+			createEventType();
+		}
+		
+		try {
+			atlasClient.getType("nifi_flow");
+			getLogger().info("********************* Nifi Atlas Type: nifi_flow is already present");
+		} catch (AtlasServiceException e) {
+			createNifiFlowType();
+		}
 		
 		typesDef = TypesUtil.getTypesDef(
 				getEnumTypeDefinitions(), 	//Enums 
