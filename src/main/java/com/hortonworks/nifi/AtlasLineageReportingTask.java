@@ -139,14 +139,16 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         if(timesTriggered == 0){
         	getLogger().info("********************* Checking if data model has been created...");
         	try {
-        		if(atlasClient.getType("event").isEmpty() || atlasClient.getType("nifi_flow").isEmpty()){
-        			getLogger().info("********************* Data model is not present, creating...");
-        			getLogger().info("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
-        		}else{
-        			getLogger().info("********************* Data model is already present");
-        		}	
-        	} catch (AtlasServiceException e1) {
-        		e1.printStackTrace();
+        		atlasClient.getType("event");
+        		atlasClient.getType("nifi_flow");
+        		getLogger().info("********************* Data model is already present");	
+        	} catch (AtlasServiceException e) {
+        		getLogger().info("********************* Data model is not present, creating...");
+    			try {
+					getLogger().info("Created: " + atlasClient.createType(generateNifiEventLineageDataModel()));
+				} catch (AtlasServiceException e1) {
+					e1.printStackTrace();
+				}
         	}
         }
         
