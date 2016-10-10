@@ -219,7 +219,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     }
     
     private void processEvent(ProvenanceEventRecord event) throws Exception {
-        getLogger().info("Processing event with id {}", new Object[] {event.getEventId()});
+        getLogger().info("Processing event with flowFileId {}", new Object[] {event.getFlowFileUuid()});
         String eventType = event.getEventType().name();
         getLogger().info("Processing event of type {}", new Object[] {eventType});
         //String generatedUuid = UUID.randomUUID().toString();
@@ -295,6 +295,8 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         nifiFlow.set("name", name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("inputs", sourceList);
         nifiFlow.set("outputs", targetList);
+        getLogger().info("********************* Looking up lineage for flowFileId: " + egressPoint.getValuesMap().get("flowFileId"));
+        getLogger().info("********************* Current Lineage Map: " + egressPoint.getValuesMap().get("flowFileId"));
         nifiFlow.set("nodes", nifiLineageMap.get(egressPoint.getValuesMap().get("flowFileId")));
         return nifiFlow;
     }
