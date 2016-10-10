@@ -196,7 +196,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         while(eventsIterator.hasNext()){
         	currentEvent = eventsIterator.next();
         	if(nifiFlowIngressMap.containsKey(currentEvent) && nifiFlowEgressMap.containsKey(currentEvent)){
-        		Referenceable nifiFlowRef = createNifiFlow(reportingContext, nifiFlowIngressMap.get(currentEvent), nifiFlowEgressMap.get(currentEvent));
+        		Referenceable nifiFlowRef = createNifiFlow(reportingContext, nifiFlowIngressMap.get(currentEvent), nifiFlowEgressMap.get(currentEvent), currentEvent);
         		try {
 					register(atlasClient, nifiFlowRef);
 				} catch (Exception e) {
@@ -280,23 +280,23 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         }		
     }
 
-    private Referenceable createNifiFlow(final ReportingContext context, final Referenceable ingressPoint, final Referenceable egressPoint) {
-        final String id = context.getEventAccess().getControllerStatus().getId();
-        final String name = context.getEventAccess().getControllerStatus().getName();
+    private Referenceable createNifiFlow(final ReportingContext context, final Referenceable ingressPoint, final Referenceable egressPoint, String flowFileId) {
+        String id = context.getEventAccess().getControllerStatus().getId();
+        String name = context.getEventAccess().getControllerStatus().getName();
         
         List<Id> sourceList = new ArrayList<Id>();
         List<Id> targetList = new ArrayList<Id>();
         sourceList.add(ingressPoint.getId());
         targetList.add(egressPoint.getId());
         
-        final Referenceable nifiFlow = new Referenceable("nifi_flow");
+        Referenceable nifiFlow = new Referenceable("nifi_flow");
         nifiFlow.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("flow_id", id);
         nifiFlow.set("name", name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("inputs", sourceList);
         nifiFlow.set("outputs", targetList);
-        getLogger().info("********************* Looking up lineage for flowFileId: " + egressPoint.get("flowFileId"));
-        nifiFlow.set("nodes", nifiLineageMap.get(egressPoint.get("flowFileId")));
+        getLogger().info("********************* Looking up lineage for flowFileId: " + flowFileId);
+        nifiFlow.set("nodes", nifiLineageMap.get(flowFileId));
         return nifiFlow;
     }
     
