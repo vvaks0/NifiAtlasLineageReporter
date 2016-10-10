@@ -130,11 +130,12 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
             atlasClient = new AtlasClient(atlasURL, basicAuth);
         }
     	
-    	if(atlasVersion > 0.6){
+    	if(atlasVersion == 0.0){
         	atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
         	getLogger().info("********************* Atlas Version is: " + atlasVersion);
     	}
     	
+    	getLogger().info("********************* Number of Reports Sent: " + timesTriggered);
         if(timesTriggered == 0){
         	getLogger().info("********************* Checking if data model has been created...");
         	try {
