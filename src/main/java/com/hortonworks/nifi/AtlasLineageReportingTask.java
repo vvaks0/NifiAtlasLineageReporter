@@ -88,9 +88,9 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     private String DEFAULT_ADMIN_USER = "admin";
     private String DEFAULT_ADMIN_PASS = "admin";
     private String searchableAttribute;
-    private String atlasUrl = "http://sandbox.hortonworks.com:21000";
+    private String atlasUrl;
     
-    private AtlasClient atlasClient;
+    private AtlasClient atlasClient = null;
     private Referenceable outgoingEvent = null;
     private Referenceable incomingEvent = null;
     
@@ -115,12 +115,12 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     public void onTrigger(ReportingContext reportingContext) {
         // create the Atlas client if we don't have one
     	Properties props = System.getProperties();
-        props.setProperty("atlas.conf", "/usr/hdp/current/atlas-server/conf");
+        props.setProperty("atlas.conf", "/usr/hdp/current/atlas-client/conf");
         getLogger().info("***************** atlas.conf has been set to: " + props.getProperty("atlas.conf"));
     	
         EventAccess eventAccess = reportingContext.getEventAccess();
-        searchableAttribute = reportingContext.getProperty(SEARCHABLE_ATTRIBUTE).getValue();
         int pageSize = reportingContext.getProperty(ACTION_PAGE_SIZE).asInteger();
+        searchableAttribute = reportingContext.getProperty(SEARCHABLE_ATTRIBUTE).getValue();
         atlasUrl = reportingContext.getProperty(ATLAS_URL).getValue();
         String[] atlasURL = {atlasUrl};
         String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
@@ -130,7 +130,7 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
             atlasClient = new AtlasClient(atlasURL, basicAuth);
         }
     	
-    	if(atlasVersion == 0.0){
+    	if(atlasVersion > 0.6){
         	atlasVersion = Double.valueOf(getAtlasVersion(atlasUrl + "/api/atlas/admin/version", basicAuth));
         	getLogger().info("********************* Atlas Version is: " + atlasVersion);
     	}
@@ -222,7 +222,6 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
     
     private void processEvent(ProvenanceEventRecord event) throws Exception {
         getLogger().info("Processing event with id {}", new Object[] {event.getEventId()});
-        //ReferenceableUtil.register(atlasClient, createProcessor(action));
         String eventType = event.getEventType().name();
         getLogger().info("Processing event of type {}", new Object[] {eventType});
         //String generatedUuid = UUID.randomUUID().toString();
@@ -241,7 +240,6 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 				nifiFlowIngressMap.put(event.getFlowFileUuid(), register(atlasClient, createEvent(event, qualifiedName)));
 			}
         	nifiFlowFiles.add(event.getFlowFileUuid());
-        	//nifiLineage.add(event.getComponentType() + ":" + eventType);
         	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + "-->" + event.getComponentType() + ":" + eventType);
         }else if(eventType.equalsIgnoreCase("SEND")){
         	String qualifiedName = "SEND_"+event.getFlowFileUuid();
@@ -258,11 +256,9 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
 				getLogger().info("********************* Could not find Referenceable Event, creating...." + qualifiedName);
 				nifiFlowEgressMap.put(event.getFlowFileUuid(), register(atlasClient, createEvent(event, qualifiedName)));
 			}        	
-        	//nifiLineage.add(event.getComponentType() + ":" + eventType);
         	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + "-->" + event.getComponentType() + ":" + eventType);
         }else{
         	getLogger().info("Event type is: " + eventType + ", adding to actions list....");
-        	//nifiLineage.add(event.getComponentType() + ":" + eventType);
         	nifiLineageMap.put(event.getFlowFileUuid(), nifiLineageMap.get(event.getFlowFileUuid()) + "-->" + event.getComponentType() + ":" + eventType);
         }
         getLogger().info(nifiLineageMap.toString());
@@ -273,14 +269,10 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
             return null;
         }
 
-        final String typeName = referenceable.getTypeName();
+        String typeName = referenceable.getTypeName();
         getLogger().info("creating instance of type " + typeName);
-
-        //final String entityJSON = InstanceSerialization.toJson(referenceable, true);
-        //getLogger().info("Submitting new entity {} = {}", new Object[] {referenceable.getTypeName(), entityJSON});
         getLogger().info("Submitting new entity: " + referenceable.toString());
-        //final List<String> guid = atlasClient.createEntity(entityJSON);
-        final List<String> guid = atlasClient.createEntity(referenceable);
+        List<String> guid = atlasClient.createEntity(referenceable);
         getLogger().info("created instance for type " + typeName + ", guid: " + guid);
         
         if(guid.size() == 0){
@@ -302,13 +294,10 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         final Referenceable nifiFlow = new Referenceable("nifi_flow");
         nifiFlow.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("flow_id", id);
-        //nifiFlow.set("name", name+"_"+id+"_"+inputs[0].getId()+"_"+outputs[0].getId());
         nifiFlow.set("name", name+"_"+id+"_"+egressPoint.getId()._getId());
         nifiFlow.set("inputs", sourceList);
         nifiFlow.set("outputs", targetList);
         nifiFlow.set("nodes", nifiLineageMap.get(egressPoint.getValuesMap().get("flowFileId")));
-        //nifiFlow.set("description", "");
-        
         return nifiFlow;
     }
     
