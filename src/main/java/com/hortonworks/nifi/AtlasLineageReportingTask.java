@@ -121,11 +121,11 @@ public class AtlasLineageReportingTask extends AbstractReportingTask {
         EventAccess eventAccess = reportingContext.getEventAccess();
         searchableAttribute = reportingContext.getProperty(SEARCHABLE_ATTRIBUTE).getValue();
         int pageSize = reportingContext.getProperty(ACTION_PAGE_SIZE).asInteger();
+        atlasUrl = reportingContext.getProperty(ATLAS_URL).getValue();
         String[] atlasURL = {atlasUrl};
         String[] basicAuth = {DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS};
 		
     	if (atlasClient == null) {
-            atlasUrl = reportingContext.getProperty(ATLAS_URL).getValue();
             getLogger().info("Creating new Atlas client for {}", new Object[] {atlasUrl});
             atlasClient = new AtlasClient(atlasURL, basicAuth);
         }
