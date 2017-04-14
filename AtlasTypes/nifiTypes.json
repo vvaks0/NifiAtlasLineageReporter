@@ -7,6 +7,7 @@
         		"superTypes":["DataSet"],
 			"hierarchicalMetaTypeName": "org.apache.atlas.typesystem.types.ClassType",
         		"typeName": "event",
+			"typeDescription": null,
         		"attributeDefinitions": [
         			{
             				"name": "event_key",
@@ -23,6 +24,7 @@
 			"superTypes":["Process"],
 			"hierarchicalMetaTypeName": "org.apache.atlas.typesystem.types.ClassType",
 			"typeName": "nifi_flow",
+			"typeDescription": null,
 			"attributeDefinitions": [
           			{
             				"name": "nodes",
